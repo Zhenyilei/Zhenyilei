@@ -239,12 +239,22 @@ for (i in N_set) {
   results_df <- rbind(results_df, data.frame(Age =  i , true_pred = result$true_pred, lower_p = result$lower_p, upper_p = result$upper_p))
 }
 
-plot(x,y2)
+tau=0.9
 
-polygon(c(45:82, rev(45:82)), c(sim[1,], rev(sim[2,])), col = "gray")
+gap<-abs(thres$x/ (temp_beta$u_t*sqrt(temp_beta$nrow* bn * (tau))))
 
-polygon(c(results_df$Age, rev(results_df$Age)), c(results_df$upper, rev(results_df$lower)), col = "red")
 
-lines(N_set,results_df$true_pred,col='green',lwd=1)
+ # View the results
+print(results_df)
 
+plot(data1$Age_Instance2,data1$ACR.L)
+tt<-rq(ACR.L~Age_Instance2,data=data1,tau = 0.9)
+summary(tt)
+
+abline(tt,col="red",lwd=1)
+
+polygon(c(temp_beta$Age, rev(temp_beta$Age)), c(2*temp_beta$beta_hat_0-temp_beta$beta_check_0+gap,
+                                                rev(2*temp_beta$beta_hat_0-temp_beta$beta_check_0-gap)), col = "gray")
+
+lines(N_set,2*temp_beta$beta_hat_0-temp_beta$beta_check_0,col='green',lwd=1)
 
