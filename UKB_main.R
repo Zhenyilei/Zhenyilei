@@ -127,12 +127,12 @@ Hhat=getHnhat(abs(res))
 #### Simulation for T_n ####
 Simulation1<-function(num,Hhat,tau=0.9,bn=5.5){
   result<-matrix(,nrow = N,ncol = num)
-  true_beta<-qfrechet(tau, shape = 1/Hhat)
+  true_beta<-qfrechet(p = tau, shape = 1/Hhat)
   for (i in 1:num) {
     set.seed(i)
     print(i)
     Sim<-rfrechet(40414, shape = 1/Hhat)
-    temp_beta<-Get_beta(bn,data1$Age_Instance2,Sim,N_set)
+    temp_beta<-Get_beta(bn,data1$Age_Instance2,Sim,N_set,tau=tau)
     beta_dif<-abs(2*temp_beta$beta_hat_0-temp_beta$beta_check_0-true_beta)
     result[,i]<-(temp_beta$u_t*sqrt(temp_beta$local_n * bn * (tau)))*beta_dif
   }
