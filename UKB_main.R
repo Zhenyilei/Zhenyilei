@@ -354,3 +354,54 @@ polygon(c(45:82, rev(45:82)), c(sim[1,], rev(sim[2,])), col = "gray")
                                   rev(2*temp_beta$beta_hat_0-temp_beta$beta_check_0-gap)), col = rgb(0, 0, 1, 0.2))
 
 lines(N_set,results_df$true_pred,col='green',lwd=1)
+
+
+HQRbetaphat = function(Y,p,tau,nbootstrap,X)
+{
+  n = length(Y)
+  tn = seq(1,n,1)/n
+  fma = "~ 1"
+  if(p >= 1)
+  {
+    for(i in 1:p)
+    {
+      fma = paste(fma," + I(tn^",i,")",sep = "")
+    }
+  }
+  X = model.matrix(as.formula(fma))
+  m = rq(Y ~ X-1,tau = tau)
+  Uhat = m$residuals
+  ##Estimating the long-run variance in terms of correlation using banding
+  IndUhat = as.numeric(Uhat > 0)
+  lrvrhowtuning = LRVrhoBanded(IndUhat,qhat = TRUE)
+  lrvtuning = lrvrhowtuning$lrvtuning
+  lrvrho = lrvrhowtuning$lrvrho
+  ##Estimating the tail density
+  dUhat = density(Uhat)
+  fn0 = approx(dUhat$x,dUhat$y,xout = 0)$y
+  fn0tuning = dUhat$bw
+  taun = sqrt(n/(1-tau))*fn0
+  ##Focusing on the last coefficient, betap
+  betaphat = as.vector(m$coefficients)
+  ##Standard error using the central limit theorem
+  Sigman = t(X)%*%X/n
+  sebetaphatiid = sqrt(diag(solve(Sigman)))/taun
+  ##Standard error using residual bootstrap
+  betaphatbootstrapiid = matrix(0, nrow = nbootstrap, ncol = p+1)
+  for(i in 1:nbootstrap)
+  {
+    Ubootstrap = sample(Uhat,size = n,replace = TRUE)
+    Ybootstrap = m$fitted.values + Ubootstrap
+    mbootstrap = rq(Ybootstrap ~ X-1,tau = tau)
+    ##Correcting for the dependence
+    Uhatbootstrap = mbootstrap$residuals
+    ##Estimating the long-run variance in terms of correlation using banding
+    IndUhatbootstrap = as.numeric(Uhatbootstrap > 0)
+    betaphatbootstrapiid[i,] = as.vector(mbootstrap$coefficients)
+  }
+  sebetaphatbootstrapiid = apply(betaphatbootstrapiid,2,sd)
+  list(betaphat = betaphat,sebetaphatiid = sebetaphatiid,sebetaphatbootstrapiid = sebetaphatbootstrapiid)
+}
+
+te<-HQRbetaphat(data1$ACR.L,2,0.9,1000,data1$Age_Instance2)
+te
